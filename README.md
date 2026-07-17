@@ -9,6 +9,15 @@ Systemless, fully reversible, with a premium multilingual WebUI.
 
 ![banner](banner.png)
 
+## Screenshots
+
+| English | Русский | Português |
+|:---:|:---:|:---:|
+| ![English](docs/screenshot-en.png) | ![Русский](docs/screenshot-ru.png) | ![Português](docs/screenshot-pt.png) |
+
+The WebUI auto-detects your system language (defaults to English) and can be
+switched in-app between **English · Русский · Português (BR)**.
+
 ## The problem
 
 On HyperOS, when you sign in to an app (bank, WhatsApp, Discord…) with a **passkey**,
@@ -51,7 +60,7 @@ Built and tested on a Redmi Note 13 Pro 5G (`garnet`), HyperOS 3, Android 16.
 ## Install
 
 1. Download `passkey_google_fix.zip` from
-   [Releases](https://github.com/orickmaxx/passkey-google-fix/releases) or the repo.
+   [Releases](https://github.com/orickmaxx/passkey-google-fix/releases/latest).
 2. KernelSU Next → **Modules → Install from storage** → pick the zip.
 3. The fix applies immediately (no reboot needed); reboot keeps it persistent.
 
@@ -64,6 +73,21 @@ Open the module's **WebUI** button in KernelSU Next for a live panel:
 - **Passkey test** against a neutral site (`webauthn.io`) — no bank app required
 - Languages: **English · Русский · Português (BR)**, auto-detected, switchable in-app
 
+## Compatibility
+
+This module **only** changes Credential Manager / passkey provider settings. It does
+**not** touch, patch, or conflict with certification / Play Integrity modules or
+Xposed frameworks — it is safe to run alongside your existing stack. Built and used
+next to:
+
+- [Zygisk Next](https://github.com/Dr-TSNG/ZygiskNext) — Zygisk provider for KernelSU
+- [Tricky Store](https://github.com/5ec1cff/TrickyStore) — hardware key attestation
+- [Integrity Box](https://github.com/MeowDump/Integrity-Box) — Play Integrity meta-module (PIF)
+- [Vector](https://github.com/JingMatrix/Vector) — modern Xposed framework
+
+*(Links go to each project's original repository. Those are separate projects by
+their respective authors — not affiliated with this module.)*
+
 ## How it works (files)
 
 | File | Role |
@@ -74,6 +98,13 @@ Open the module's **WebUI** button in KernelSU Next for a live panel:
 | `action.sh` | quick status via the Action button |
 | `webroot/index.html` | the WebUI |
 
+## About
+
+Written **entirely by me** ([orickmaxx](https://github.com/orickmaxx)). I ran into
+this exact problem on my own phone — HyperOS 3 forcing a Mi account for Google
+passkeys — found no existing fix for it, so I built one and open-sourced it. If it
+helps you, a ⭐ is appreciated.
+
 ## Disclaimer
 
 This module changes credential-provider settings on your own device. It is
@@ -81,4 +112,4 @@ reversible, but use at your own risk. Not affiliated with Google or Xiaomi.
 
 ## License
 
-[GPL-3.0](LICENSE) © orickmaxx
+[GPL-3.0](LICENSE) © [orickmaxx](https://github.com/orickmaxx)
