@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Passkey Google Fix</title>
+<style>
+  :root{
+    --txt:#f3f6fb; --dim:#aab6c8; --faint:#7b8799;
+    --brand:#f4c04f; --accent:#6e7bff; --accent2:#9b6bff;
+    --ok:#3fe0a2; --bad:#ff6f88; --warn:#ffcf6b;
+    --glass:rgba(255,255,255,.07); --glass2:rgba(255,255,255,.10);
+    --stroke:rgba(255,255,255,.14); --stroke2:rgba(255,255,255,.22);
+    --r:18px;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0}
+  body{
+    color:var(--txt);font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.5;letter-spacing:.1px;
+    padding:0 14px calc(30px + env(safe-area-inset-bottom));max-width:560px;margin:0 auto;
+    background:#070912;position:relative;overflow-x:hidden;
+  }
+  /* fundo vibrante para o vidro refratar */
+  .bgblob{position:fixed;border-radius:50%;filter:blur(70px);opacity:.55;z-index:-2;pointer-events:none}
+  #b1{width:420px;height:420px;background:#7b5cff;top:-140px;right:-120px}
+  #b2{width:380px;height:380px;background:#f4a63a;bottom:-160px;left:-120px;opacity:.4}
+  #b3{width:340px;height:340px;background:#2fb6ff;top:40%;left:-140px;opacity:.35}
+  #b4{width:300px;height:300px;background:#ff5c8a;bottom:10%;right:-120px;opacity:.3}
+  body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
+    background:radial-gradient(120% 90% at 50% -10%,transparent,rgba(7,9,18,.6) 90%)}
+  .svg{width:20px;height:20px;flex:none;display:block}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+
+  .glass{background:var(--glass);border:1px solid var(--stroke);border-radius:var(--r);
+    backdrop-filter:blur(22px) saturate(160%);-webkit-backdrop-filter:blur(22px) saturate(160%);
+    box-shadow:0 8px 30px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.08)}
+
+  /* HERO */
+  .hero{position:relative;margin:16px 0 14px;padding:18px 16px;overflow:hidden}
+  .hero-top{display:flex;align-items:center;gap:13px}
+  .keybadge{width:50px;height:50px;border-radius:15px;flex:none;display:grid;place-items:center;
+    background:linear-gradient(150deg,#f7cf6b,#e0a233);box-shadow:0 6px 20px rgba(224,162,51,.4),inset 0 1px 0 rgba(255,255,255,.6)}
+  .keybadge svg{width:27px;height:27px;color:#3a2a06}
+  .hero h1{margin:0;font-size:19px;font-weight:750;letter-spacing:-.3px}
+  .hero .tag{margin:2px 0 0;font-size:12px;color:var(--dim)}
+  .lang{display:flex;gap:2px;margin-left:auto;background:rgba(0,0,0,.25);border:1px solid var(--stroke);
+    border-radius:11px;padding:3px}
+  .lang button{border:none;background:transparent;color:var(--dim);font-size:11.5px;font-weight:800;
+    padding:6px 8px;border-radius:8px;cursor:pointer;letter-spacing:.4px}
+  .lang button.on{background:var(--glass2);color:var(--txt)}
+  .verdict{margin-top:15px;display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:14px;
+    font-weight:650;font-size:14px;background:rgba(0,0,0,.25);border:1px solid var(--stroke)}
+  .verdict .dot{width:9px;height:9px;border-radius:50%;flex:none;animation:pulse 2s infinite}
+  .verdict.good{color:var(--ok)} .verdict.bad{color:var(--warn)} .verdict.wait{color:var(--dim)}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 currentColor;opacity:1}70%{box-shadow:0 0 0 8px transparent;opacity:.7}100%{box-shadow:0 0 0 0 transparent;opacity:1}}
+
+  .clabel{font-size:11px;text-transform:uppercase;letter-spacing:1.3px;color:var(--faint);font-weight:800;padding:14px 4px 8px}
+  .card{padding:4px 16px;margin-bottom:12px}
+  .card.pad{padding:14px 16px}
+  .row{display:flex;align-items:center;gap:12px;padding:12px 0;border-top:1px solid rgba(255,255,255,.08)}
+  .row:first-child{border-top:none}
+  .row .ri{width:34px;height:34px;border-radius:10px;flex:none;display:grid;place-items:center;
+    background:var(--glass2);border:1px solid var(--stroke)}
+  .row .ri svg{width:18px;height:18px;color:var(--dim)}
+  .row .rt{flex:1;min-width:0}
+  .row .rt b{display:block;font-size:14px;font-weight:600}
+  .row .rt span{display:block;font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-size:12.5px;font-weight:700;flex:none}
+  .pill svg{width:13px;height:13px}
+  .pill.ok{background:rgba(63,224,162,.16);color:var(--ok)}
+  .pill.bad{background:rgba(255,111,136,.16);color:var(--bad)}
+  .pill.warn{background:rgba(255,207,107,.16);color:var(--warn)}
+  .pill.dim{background:var(--glass2);color:var(--dim)}
+
+  .btns{display:flex;flex-direction:column;gap:10px;padding:2px 0 8px}
+  button.act{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;border:1px solid transparent;
+    border-radius:14px;padding:14px;font-size:14.5px;font-weight:700;color:#fff;cursor:pointer;
+    transition:transform .06s,filter .15s;font-family:inherit}
+  button.act:active{transform:scale(.98)}
+  button.act svg{width:19px;height:19px}
+  .b-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 8px 22px rgba(110,123,255,.35)}
+  .b-ghost{background:var(--glass2);color:var(--txt);border-color:var(--stroke2);backdrop-filter:blur(10px)}
+  .b-danger{background:transparent;color:var(--bad);border-color:rgba(255,111,136,.4)}
+  .b-test{background:var(--glass);color:var(--txt);border-color:var(--stroke2);backdrop-filter:blur(10px)}
+  .b-test svg:first-child{color:var(--brand)}
+  .split{display:flex;gap:10px}.split button{flex:1}
+  .hint{font-size:12px;color:var(--faint);padding:2px 2px 8px;display:flex;gap:7px;align-items:flex-start}
+  .hint svg{width:14px;height:14px;color:var(--faint);margin-top:2px;flex:none}
+  #log{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:11.5px;color:#9db0c6;
+    white-space:pre-wrap;word-break:break-word;max-height:160px;overflow:auto}
+  .foot{text-align:center;color:var(--faint);font-size:11px;padding:8px 0 2px}
+</style>
+</head>
+<body>
+  <div class="bgblob" id="b1"></div><div class="bgblob" id="b2"></div>
+  <div class="bgblob" id="b3"></div><div class="bgblob" id="b4"></div>
+
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+    <symbol id="i-key" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="4.5"/><path d="M10.5 12.5 20 3"/><path d="M16 7l3 3"/><path d="M13.5 9.5l2.5 2.5"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l7 3v5c0 4.5-3 7.6-7 9-4-1.4-7-4.5-7-9V6z"/><path d="M9 12l2 2 4-4"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M8.5 12.5l2.5 2.5 4.5-5"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 11a8 8 0 1 0-.9 4"/><path d="M20 4v6h-6"/></symbol>
+    <symbol id="i-power" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v9"/><path d="M6.6 6.6a8 8 0 1 0 10.8 0"/></symbol>
+    <symbol id="i-flask" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6M10 3v6L5 18a2 2 0 0 0 1.8 3h10.4A2 2 0 0 0 19 18l-5-9V3"/><path d="M7.5 14h9"/></symbol>
+    <symbol id="i-undo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 7 4 12l5 5"/><path d="M4 12h11a5 5 0 0 1 0 10h-1"/></symbol>
+    <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6"/><path d="M20 4 10 14"/><path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></symbol>
+    <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5"/><path d="M12 8h.01"/></symbol>
+  </defs></svg>
+
+  <div class="hero glass">
+    <div class="hero-top">
+      <div class="keybadge"><svg><use href="#i-key"/></svg></div>
+      <div style="min-width:0">
+        <h1>Passkey Google Fix</h1>
+        <p class="tag" data-i18n="tag">Credential Manager · HyperOS</p>
+      </div>
+      <div class="lang" id="lang">
+        <button data-lang="en" onclick="setLang('en')">EN</button>
+        <button data-lang="ru" onclick="setLang('ru')">RU</button>
+        <button data-lang="pt" onclick="setLang('pt')">PT</button>
+      </div>
+    </div>
+    <div id="verdict" class="verdict wait"><span class="dot"></span><span id="verdict-txt" data-i18n="v_checking">Checking status…</span></div>
+  </div>
+
+  <div class="clabel" data-i18n="sec_status">System status</div>
+  <div class="card glass">
+    <div class="row"><div class="ri"><svg><use href="#i-shield"/></svg></div>
+      <div class="rt"><b data-i18n="r_active">Active passkey provider</b><span data-i18n="r_active_s">what the system offers</span></div>
+      <span id="s-active" class="pill dim">…</span></div>
+    <div class="row"><div class="ri"><svg><use href="#i-key"/></svg></div>
+      <div class="rt"><b data-i18n="r_enabled">Google enabled</b><span>credential_service</span></div>
+      <span id="s-enabled" class="pill dim">…</span></div>
+    <div class="row"><div class="ri"><svg><use href="#i-x"/></svg></div>
+      <div class="rt"><b data-i18n="r_xiaomi">Xiaomi provider</b><span>com.miui.passwords</span></div>
+      <span id="s-xiaomi" class="pill dim">…</span></div>
+    <div class="row"><div class="ri"><svg><use href="#i-info"/></svg></div>
+      <div class="rt"><b data-i18n="r_app">Xiaomi app</b><span id="s-primary">…</span></div>
+      <span id="s-app" class="pill dim">…</span></div>
+  </div>
+
+  <div class="clabel" data-i18n="sec_actions">Actions</div>
+  <div class="btns">
+    <button class="act b-primary" onclick="applyFix()"><svg><use href="#i-check"/></svg><span data-i18n="b_apply">Apply fix</span></button>
+    <div class="split">
+      <button class="act b-ghost" onclick="refresh()"><svg><use href="#i-refresh"/></svg><span data-i18n="b_refresh">Refresh</span></button>
+      <button class="act b-ghost" onclick="aggressive()"><svg><use href="#i-power"/></svg><span data-i18n="b_agg">Aggressive</span></button>
+    </div>
+    <button class="act b-danger" onclick="revertAll()"><svg><use href="#i-undo"/></svg><span data-i18n="b_revert">Revert all</span></button>
+    <p class="hint"><svg><use href="#i-info"/></svg><span data-i18n="hint_actions">The fix disables the Xiaomi provider and enables Google. Aggressive mode turns off the whole app (reversible).</span></p>
+  </div>
+
+  <div class="clabel" data-i18n="sec_test">Test passkey (no bank needed)</div>
+  <div class="btns">
+    <button class="act b-test" onclick="openTest('https://webauthn.io')"><svg><use href="#i-flask"/></svg><span>webauthn.io</span><svg style="opacity:.55"><use href="#i-link"/></svg></button>
+    <button class="act b-test" onclick="openTest('https://passkeys-demo.appspot.com')"><svg><use href="#i-flask"/></svg><span data-i18n="b_gdemo">Google demo</span><svg style="opacity:.55"><use href="#i-link"/></svg></button>
+    <p class="hint"><svg><use href="#i-info"/></svg><span data-i18n="hint_test">Opens a neutral site. When you register or sign in with a passkey, Google's UI should appear — not the Mi account prompt.</span></p>
+  </div>
+
+  <div class="clabel" data-i18n="sec_log">Log</div>
+  <div class="card pad glass"><div id="log">ready.</div></div>
+  <p class="foot">Passkey Google Fix v1.2 · orickmaxx · GPL-3.0</p>
+
+<script>
+  var GOOGLE="com.google.android.gms/com.google.android.gms.auth.api.credentials.credman.service.PasswordAndPasskeyService";
+  var XPKG="com.miui.passwords", XPROV="com.miui.passwords/.credential.provider.XiaomiCredentialProviderService";
+  var lang="en";
+
+  var I={
+   en:{tag:"Credential Manager · HyperOS",v_checking:"Checking status…",v_good:"Fix active — passkeys use Google",v_bad:"Fix incomplete — tap Apply",v_nb:"Open via KernelSU Next WebUI",
+     sec_status:"System status",sec_actions:"Actions",sec_test:"Test passkey (no bank needed)",sec_log:"Log",
+     r_active:"Active passkey provider",r_active_s:"what the system offers",r_enabled:"Google enabled",r_xiaomi:"Xiaomi provider",r_app:"Xiaomi app",
+     b_apply:"Apply fix",b_refresh:"Refresh",b_agg:"Aggressive",b_revert:"Revert all",b_gdemo:"Google demo",
+     hint_actions:"The fix disables the Xiaomi provider and enables Google. Aggressive mode turns off the whole app (reversible).",
+     hint_test:"Opens a neutral site. When you register or sign in with a passkey, Google's UI should appear — not the Mi account prompt.",
+     p_only:"Google only",p_both:"Google + Xiaomi",p_yes:"Yes",p_no:"No",p_dis:"Disabled",p_act:"Active",p_off:"Off",p_on:"On",
+     s_mi:"Mi password provider",s_appoff:"app off (aggressive mode)",
+     t_apply:"Applying…",t_applied:"Fix applied",t_agg:"Disabling Xiaomi app…",t_rev:"Reverting…",t_reved:"Reverted",t_open:"Opening…"},
+   ru:{tag:"Credential Manager · HyperOS",v_checking:"Проверка состояния…",v_good:"Исправление активно — passkey через Google",v_bad:"Исправление неполное — нажмите Применить",v_nb:"Откройте через WebUI KernelSU Next",
+     sec_status:"Состояние системы",sec_actions:"Действия",sec_test:"Тест passkey (без банка)",sec_log:"Журнал",
+     r_active:"Активный провайдер passkey",r_active_s:"что предлагает система",r_enabled:"Google включён",r_xiaomi:"Провайдер Xiaomi",r_app:"Приложение Xiaomi",
+     b_apply:"Применить",b_refresh:"Обновить",b_agg:"Агрессивно",b_revert:"Откатить всё",b_gdemo:"Демо Google",
+     hint_actions:"Исправление отключает провайдер Xiaomi и включает Google. Агрессивный режим отключает всё приложение (обратимо).",
+     hint_test:"Открывает нейтральный сайт. При регистрации или входе через passkey должен появиться интерфейс Google, а не запрос аккаунта Mi.",
+     p_only:"Только Google",p_both:"Google + Xiaomi",p_yes:"Да",p_no:"Нет",p_dis:"Отключён",p_act:"Активен",p_off:"Выкл",p_on:"Вкл",
+     s_mi:"провайдер паролей Mi",s_appoff:"приложение выкл (агрессивный режим)",
+     t_apply:"Применение…",t_applied:"Исправление применено",t_agg:"Отключение приложения Xiaomi…",t_rev:"Откат…",t_reved:"Откачено",t_open:"Открытие…"},
+   pt:{tag:"Credential Manager · HyperOS",v_checking:"Verificando estado…",v_good:"Correção ativa — passkeys usam o Google",v_bad:"Correção incompleta — toque em Aplicar",v_nb:"Abra pela WebUI do KernelSU Next",
+     sec_status:"Estado do sistema",sec_actions:"Ações",sec_test:"Testar passkey (sem banco)",sec_log:"Log",
+     r_active:"Provedor de passkey ativo",r_active_s:"o que o sistema oferece",r_enabled:"Google habilitado",r_xiaomi:"Provedor Xiaomi",r_app:"App Xiaomi",
+     b_apply:"Aplicar correção",b_refresh:"Atualizar",b_agg:"Agressivo",b_revert:"Reverter tudo",b_gdemo:"Demo do Google",
+     hint_actions:"A correção desabilita o provedor Xiaomi e habilita o Google. O modo agressivo desliga o app inteiro (reversível).",
+     hint_test:"Abre um site neutro. Ao registrar ou entrar com passkey deve aparecer a interface do Google — não o pedido de conta Mi.",
+     p_only:"Só Google",p_both:"Google + Xiaomi",p_yes:"Sim",p_no:"Não",p_dis:"Desabilitado",p_act:"Ativo",p_off:"Desligado",p_on:"Ligado",
+     s_mi:"provedor de senhas Mi",s_appoff:"app desligado (modo agressivo)",
+     t_apply:"Aplicando…",t_applied:"Correção aplicada",t_agg:"Desligando app Xiaomi…",t_rev:"Revertendo…",t_reved:"Revertido",t_open:"Abrindo…"}
+  };
+  function t(k){return (I[lang]&&I[lang][k])||I.en[k]||k;}
+
+  function log(m){var l=document.getElementById('log');l.textContent=(m+"\n"+l.textContent).slice(0,4000);}
+  function toast(m){try{ksu.toast(m);}catch(e){}}
+  function exec(cmd){return new Promise(function(res){
+    if(typeof ksu==="undefined"||!ksu.exec){res({errno:-1,stdout:"",stderr:"no bridge"});return;}
+    var cb="cb_"+Math.random().toString(36).slice(2);
+    window[cb]=function(e,o,s){res({errno:e,stdout:o||"",stderr:s||""});try{delete window[cb];}catch(x){}};
+    try{ksu.exec(cmd,JSON.stringify({}),cb);}catch(x){res({errno:-1,stdout:"",stderr:String(x)});}
+  });}
+
+  function applyLang(){
+    document.documentElement.lang = (lang==="pt"?"pt-BR":lang);
+    document.querySelectorAll('[data-i18n]').forEach(function(el){el.textContent=t(el.getAttribute('data-i18n'));});
+    document.querySelectorAll('#lang button').forEach(function(b){b.classList.toggle('on',b.getAttribute('data-lang')===lang);});
+  }
+  function setLang(l){lang=l;try{localStorage.setItem('pgf_lang',l);}catch(e){}applyLang();refresh();}
+
+  function pill(el,cls,txt,icon){
+    document.getElementById(el).outerHTML='<span id="'+el+'" class="pill '+cls+'">'+(icon?'<svg><use href="#'+icon+'"/></svg>':'')+txt+'</span>';
+  }
+  async function refresh(){
+    var v=document.getElementById('verdict'),vt=document.getElementById('verdict-txt');
+    if(typeof ksu==="undefined"){v.className="verdict bad";vt.textContent=t('v_nb');return;}
+    var a=await exec("cmd package query-services -a android.service.credentials.CredentialProviderService");
+    var xA=a.stdout.indexOf("XiaomiCredentialProviderService")>=0;
+    pill('s-active', xA?'warn':'ok', xA?t('p_both'):t('p_only'), xA?'i-info':'i-check');
+    var en=await exec("settings get secure credential_service");
+    var gE=en.stdout.indexOf("PasswordAndPasskeyService")>=0;
+    pill('s-enabled', gE?'ok':'bad', gE?t('p_yes'):t('p_no'), gE?'i-check':'i-x');
+    var xd=await exec("dumpsys package "+XPKG+" | grep -A3 disabledComponents | grep -c XiaomiCredentialProviderService");
+    var xDis=xd.stdout.trim().charAt(0)==="1";
+    pill('s-xiaomi', xDis?'ok':'bad', xDis?t('p_dis'):t('p_act'), xDis?'i-check':'i-x');
+    var ad=await exec("pm list packages -d "+XPKG+" | grep -c "+XPKG);
+    var appDis=ad.stdout.trim().charAt(0)==="1";
+    pill('s-app', appDis?'warn':'dim', appDis?t('p_off'):t('p_on'), null);
+    document.getElementById('s-primary').textContent = appDis?t('s_appoff'):t('s_mi');
+    var good=xDis&&gE; v.className="verdict "+(good?"good":"bad"); vt.textContent=good?t('v_good'):t('v_bad');
+  }
+  async function applyFix(){toast(t('t_apply'));log("» apply");
+    await exec("pm disable "+XPROV); await exec('settings put secure credential_service "'+GOOGLE+'"');
+    log("  Xiaomi off · Google enabled"); toast(t('t_applied')); await refresh();}
+  async function aggressive(){toast(t('t_agg'));log("» aggressive");
+    await exec("pm disable-user --user 0 "+XPKG); await applyFix();}
+  async function revertAll(){toast(t('t_rev'));log("» revert");
+    await exec("pm enable "+XPKG); await exec("pm enable "+XPROV); await exec('settings put secure credential_service ""');
+    log("  reverted"); toast(t('t_reved')); await refresh();}
+  async function openTest(u){log("» open "+u);await exec("am start -a android.intent.action.VIEW -d "+u);toast(t('t_open'));}
+
+  (async function init(){
+    var saved=null; try{saved=localStorage.getItem('pgf_lang');}catch(e){}
+    if(saved){lang=saved;}
+    else{
+      var r=await exec("getprop persist.sys.locale");
+      var l=(r.stdout||"").trim().toLowerCase();
+      lang = l.indexOf("ru")===0?"ru":(l.indexOf("pt")===0?"pt":"en");
+    }
+    applyLang(); refresh();
+  })();
+</script>
+</body>
+</html>

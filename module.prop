@@ -1,0 +1,11 @@
+id=passkey_google_fix
+name=Passkey Google Fix (HyperOS)
+version=v1.2.0
+versionCode=3
+author=orickmaxx
+description=Forces Android Credential Manager to use Google for passkeys instead of Xiaomi's provider (which asks for a Mi account). Disables the Xiaomi provider + enables Google. Premium multilingual WebUI. Systemless and reversible.
+actionIcon=action.png
+webuiIcon=webui.png
+banner=https://raw.githubusercontent.com/orickmaxx/passkey-google-fix/main/banner.png
+support=https://github.com/orickmaxx/passkey-google-fix
+updateJson=https://raw.githubusercontent.com/orickmaxx/passkey-google-fix/main/update.json
